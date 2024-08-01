@@ -175,17 +175,17 @@ const PUP_MOUTH_SAD_2 = 241
 
 class Puppy {
 	x = 32
-	y = 64
+	y = SCREEN_H
 	bodySprite = PUP_BODY_SPRITE
 	boobSprite = PUP_BOOB_SPRITE
 	boobs = {
 		x: 32,
-		y: 64 + 18
+		y: SCREEN_H
 	}
 	headSprite = PUP_HEAD_SPRITE
 	head = {
 		x: 32,
-		y: 64 - 39
+		y: SCREEN_H
 	}
 	eyeSprite = PUP_EYE_AHEAD
 	eyeFlip = 0
@@ -1000,6 +1000,7 @@ function startPuppyJumpAnimation() {
 			durationFrames: 60,
 			startY: SCREEN_H + 39,
 			endY: SCREEN_H + 2 - 20,
+			delayFrames: 60,
 			easing: easeOutQuad,
 		}),
 		new Tween({
@@ -1007,11 +1008,14 @@ function startPuppyJumpAnimation() {
 			durationFrames: 60,
 			startY: SCREEN_H + 18 + 30,
 			endY: SCREEN_H + 2 - 20 + 18,
+			delayFrames: 60,
+
 			easing: easeOutQuad,
 		}),
 		new Tween({
 			target: game.puppy.head,
 			durationFrames: 60,
+			delayFrames: 60,
 			startY: SCREEN_H - 39 + 39,
 			endY: SCREEN_H + 2 - 39,
 			easing: easeOutQuad,
@@ -1021,6 +1025,7 @@ function startPuppyJumpAnimation() {
 			target: game.title,
 			startY: 128,
 			endY: 2,
+			delayFrames: 60,
 			durationFrames: 60,
 			easing: easeOutBounce,
 		})
