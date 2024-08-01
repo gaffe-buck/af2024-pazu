@@ -943,7 +943,6 @@ function startPuppyBlink() {
 			game.puppy.happy = false
 			addSadAnimTimer()
 			game.puppy.needs = PUPPY_NEEDS[Math.floor(getRandomArbitrary(0, 4))]
-			trace(game.puppy.needs)
 		}))
 	} else {
 		addSadAnimTimer()
