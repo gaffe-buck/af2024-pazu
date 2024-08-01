@@ -155,129 +155,41 @@ class Timer {
 	}
 }
 
-function startPuppyBlink() {
-	function puppyOpenEyes() {
-		game.puppy.eyeSprite = 192
-		game.puppy.timers.push(new Timer(60 * getRandomArbitrary(4, 7), puppyCloseEyes))
-	}
-
-	function puppyCloseEyes() {
-		game.puppy.eyeSprite = 164
-		game.puppy.timers.push(new Timer(0.125 * 60, puppyOpenEyes))
-	}
-
-	puppyCloseEyes()
-}
-
-function startPuppyJumpAnimation() {
-	game.puppy.timers = []
-
-	game.hud.disableButtons(true)
-	game.puppy.eyeSprite = 128
-
-	game.puppy.tweens = [
-		new Tween({
-			target: game.puppy,
-			durationFrames: 60,
-			startY: SCREEN_H + 39,
-			endY: SCREEN_H + 2 - 20,
-			easing: easeOutQuad,
-		}),
-		new Tween({
-			target: game.puppy.boobs,
-			durationFrames: 60,
-			startY: SCREEN_H + 18 + 30,
-			endY: SCREEN_H + 2 - 20 + 18,
-			easing: easeOutQuad,
-		}),
-		new Tween({
-			target: game.puppy.head,
-			durationFrames: 60,
-			startY: SCREEN_H - 39 + 39,
-			endY: SCREEN_H + 2 - 39,
-			easing: easeOutQuad,
-			callback: eyeWiggleAnimation
-		}),
-	]
-
-	function eyeWiggleAnimation() {
-		game.puppy.eyeSprite = 132
-
-		function flipEyes(times, ms, callback) {
-			let timer = new Timer(ms, callback)
-
-			for (let i = 1; i < times; i++) {
-				let oldTimer = timer
-				timer = new Timer(ms, () => {
-					trace(i)
-					game.puppy.eyeFlip = game.puppy.eyeFlip ? 0 : 1
-					game.puppy.timers.push(oldTimer)
-				})
-			}
-
-			return timer
-		}
-
-		game.puppy.timers = [flipEyes(4, 30, () => {
-			game.puppy.eyeSprite = 128
-			bounceUpAnimation()
-		})]
-	}
-
-	function bounceUpAnimation() {
-		game.puppy.tweens = [
-			new Tween({
-				target: game.puppy,
-				durationFrames: 60,
-				delayFrames: 0,
-				startY: SCREEN_H + 2 - 20,
-				endY: SCREEN_H - 40,
-				easing: easeOutElastic,
-			}),
-			new Tween({
-				target: game.puppy.boobs,
-				durationFrames: 70,
-				delayFrames: 2,
-				startY: SCREEN_H + 2 - 20 + 18,
-				endY: SCREEN_H - 40 + 18,
-				easing: easeOutElastic,
-			}),
-			new Tween({
-				target: game.puppy.head,
-				durationFrames: 60,
-				delayFrames: 0,
-				startY: SCREEN_H + 2 - 20 - 39,
-				endY: SCREEN_H - 40 - 39,
-				easing: easeOutElastic,
-				callback: () => {
-					game.puppy.eyeSprite = 192
-					game.puppy.timers.push(new Timer(120, startPuppyBlink))
-					game.hud.disableButtons(false)
-				}
-			})
-		]
-	}
-}
-
 // puppy body is "root"
 // head y: body - 39
 // boobs y: body + 18
+const PUP_EYE_UP = 128
+const PUP_EYE_SIDE = 132
+const PUP_EYE_AHEAD = 192
+const PUP_BLINK_HAPPY = 164
+const PUP_BLINK_SAD = 160
+const PUP_BODY_SPRITE = 48
+const PUP_HEAD_SPRITE = 8
+const PUP_BOOB_SPRITE = 0
+const PUP_MOUTH_HAPPY = 224
+const PUP_MOUTH_OPEN = 225
+const PUP_MOUTH_SAD = 240
+const PUP_MOUTH_SAD_2 = 241
+
 class Puppy {
 	x = 32
 	y = 64
-	bodySprite = 48
-	boobSprite = 0
+	bodySprite = PUP_BODY_SPRITE
+	boobSprite = PUP_BOOB_SPRITE
 	boobs = {
 		x: 32,
 		y: 64 + 18
 	}
-	headSprite = 8
+	headSprite = PUP_HEAD_SPRITE
 	head = {
 		x: 32,
 		y: 64 - 39
 	}
-	eyeSprite = 128
+	eyeSprite = PUP_EYE_AHEAD
 	eyeFlip = 0
+	mouthSprite = PUP_MOUTH_HAPPY
+
+	happy = false
 
 	tweens = []
 	timers = []
@@ -297,6 +209,8 @@ class Puppy {
 		spr(this.bodySprite, this.x, this.y, 0, 1, 0, 0, 8, 5)
 		spr(this.boobSprite, this.boobs.x, this.boobs.y, 0, 1, 0, 0, 8, 3)
 		spr(this.headSprite, this.head.x, this.head.y, 0, 1, 0, 0, 8, 7)
+		spr(this.mouthSprite, this.head.x + 24, this.head.y + 36, 0, 1)
+		spr(this.mouthSprite, this.head.x + 32, this.head.y + 36, 0, 1, 1)
 		spr(this.eyeSprite, this.head.x + 16, this.head.y + 24, 0, 1, this.eyeFlip, 0, 4, 2)
 	}
 }
@@ -379,11 +293,45 @@ class Button {
 	}
 }
 
+const HEADPAT_HAND_1 = 196
+const HEADPAT_HAND_2 = 228
+class HeadPat {
+	x = 48
+	y = -16
+	sprite = HEADPAT_HAND_1
+
+	timers = []
+	tweens = []
+
+	TIC() {
+		for (const tween of this.tweens) {
+			tween.TIC()
+		}
+		this.tweens = this.tweens.filter(t => !t.done)
+
+		for (const timer of this.timers) {
+			timer.TIC()
+		}
+		this.timers = this.timers.filter(t => !t.triggered)
+
+		spr(this.sprite, this.x, this.y, 0, 1, 0, 0, 4, 2)
+		rect(this.x + 32, this.y + 1, 128, 7, 2)
+		rect(this.x + 32, this.y + 2, 128, 5, 3)
+		rect(this.x + 32 + 28, this.y + 2, 128, 5, 4)
+		rect(this.x + 32, this.y + 3, 29, 3, 3)
+	}
+}
+
 class Hud {
-	headpatButton = new Button("headpat", (SCREEN_W - 128) / 2 / 2, SCREEN_H - 16, () => { trace("pat!") })
+	headpatButton = new Button("headpat", (SCREEN_W - 128) / 2 / 2, SCREEN_H - 16, () => { this.headPatClick() })
 	kissButton = new Button("kiss", SCREEN_W - (SCREEN_W - 128) / 2 / 2, SCREEN_H - 16, () => { trace("kiss!") })
 
 	buttons = [this.headpatButton, this.kissButton]
+
+	headPatClick() {
+		this.disableButtons(true)
+		startHeadPat(() => { this.disableButtons(false) })
+	}
 
 	disableButtons(disabled) {
 		for (const button of this.buttons) button.disabled = disabled
@@ -408,16 +356,18 @@ class Game {
 	title = new Title()
 	hud = new Hud()
 	puppy = new Puppy()
+	headPat = new HeadPat()
 
 	TIC() {
 		cls(BACKGROUND_COLOR)
 		poke(0x3FF9, -SCREEN_W / 2 + 64)
 
 		this.puppy.TIC()
+		this.headPat.TIC()
 
-		this.title.TIC()
+		//this.title.TIC()
 		this.letterBox.TIC()
-		//this.hud.TIC()
+		this.hud.TIC()
 	}
 }
 
@@ -431,6 +381,200 @@ function TIC() {
 	if (!initialized) init()
 
 	game.TIC()
+}
+
+// animations
+function startHeadPat(callback) {
+	game.puppy.timers = []
+	game.puppy.tweens = []
+	game.puppy.eyeSprite = PUP_EYE_UP
+
+	game.headPat.tweens.push(new Tween({
+		target: game.headPat,
+		startY: -16,
+		endY: 32,
+		durationFrames: 30,
+		easing: easeOutElastic,
+		callback: pat2
+	}))
+
+	function pat2() {
+		game.puppy.eyeSprite = PUP_BLINK_HAPPY
+		game.puppy.mouthSprite = PUP_MOUTH_OPEN
+		game.headPat.tweens.push(new Tween({
+			target: game.headPat,
+			startY: 32,
+			endY: 64,
+			yoyo: true,
+			repeat: 2,
+			durationFrames: 10,
+			easing: easeOutQuad,
+			callback: pat3,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.head,
+			startY: game.puppy.head.y,
+			endY: game.puppy.head.y + 8,
+			yoyo: true,
+			repeat: 2,
+			durationFrames: 10,
+			easing: easeInQuad,
+		}))
+	}
+
+	function pat3() {
+		game.puppy.eyeSprite = PUP_BLINK_HAPPY
+		game.puppy.mouthSprite = PUP_MOUTH_HAPPY
+		startPuppyBlink()
+		game.headPat.tweens.push(new Tween({
+			target: game.headPat,
+			startY: 32,
+			endY: -16,
+			delayFrames: 15,
+			durationFrames: 10,
+			callback: callback,
+			easing: easeInQuad,
+		}))
+	}
+}
+
+function startPuppyBlink() {
+	function puppyOpenEyes() {
+		game.puppy.eyeSprite = game.puppy.happy ? PUP_EYE_UP : PUP_EYE_AHEAD
+		game.puppy.timers.push(new Timer(60 * getRandomArbitrary(4, 7), puppyCloseEyes))
+	}
+
+	function puppyCloseEyes() {
+		game.puppy.eyeSprite = game.puppy.happy ? PUP_BLINK_HAPPY : PUP_BLINK_SAD
+		game.puppy.timers.push(new Timer(0.125 * 60, puppyOpenEyes))
+	}
+
+	puppyCloseEyes()
+}
+
+function startPuppyJumpAnimation() {
+	game.puppy.timers = []
+
+	game.hud.disableButtons(true)
+	game.puppy.eyeSprite = PUP_EYE_UP
+
+	// DEBUG
+	game.puppy.tweens = [
+		new Tween({
+			target: game.puppy,
+			durationFrames: 60,
+			delayFrames: 0,
+			startY: SCREEN_H + 2 - 20,
+			endY: SCREEN_H - 40,
+			easing: easeOutElastic,
+		}),
+		new Tween({
+			target: game.puppy.boobs,
+			durationFrames: 70,
+			delayFrames: 2,
+			startY: SCREEN_H + 2 - 20 + 18,
+			endY: SCREEN_H - 40 + 18,
+			easing: easeOutElastic,
+		}),
+		new Tween({
+			target: game.puppy.head,
+			durationFrames: 60,
+			delayFrames: 0,
+			startY: SCREEN_H + 2 - 20 - 39,
+			endY: SCREEN_H - 40 - 39,
+			easing: easeOutElastic,
+			callback: () => {
+				game.puppy.eyeSprite = 192
+				game.puppy.timers.push(new Timer(120, startPuppyBlink))
+				game.hud.disableButtons(false)
+			}
+		})
+	]
+
+	return
+	// END DEBUG
+
+	game.puppy.tweens = [
+		new Tween({
+			target: game.puppy,
+			durationFrames: 60,
+			startY: SCREEN_H + 39,
+			endY: SCREEN_H + 2 - 20,
+			easing: easeOutQuad,
+		}),
+		new Tween({
+			target: game.puppy.boobs,
+			durationFrames: 60,
+			startY: SCREEN_H + 18 + 30,
+			endY: SCREEN_H + 2 - 20 + 18,
+			easing: easeOutQuad,
+		}),
+		new Tween({
+			target: game.puppy.head,
+			durationFrames: 60,
+			startY: SCREEN_H - 39 + 39,
+			endY: SCREEN_H + 2 - 39,
+			easing: easeOutQuad,
+			callback: eyeWiggleAnimation
+		}),
+	]
+
+	function eyeWiggleAnimation() {
+		game.puppy.eyeSprite = PUP_EYE_SIDE
+
+		function flipEyes(times, ms, callback) {
+			let timer = new Timer(ms, callback)
+
+			for (let i = 1; i < times; i++) {
+				let oldTimer = timer
+				timer = new Timer(ms, () => {
+					game.puppy.eyeFlip = game.puppy.eyeFlip ? 0 : 1
+					game.puppy.timers.push(oldTimer)
+				})
+			}
+
+			return timer
+		}
+
+		game.puppy.timers = [flipEyes(4, 30, () => {
+			game.puppy.eyeSprite = game.puppy.happy ? PUP_EYE_UP : PUP_EYE_AHEAD
+			bounceUpAnimation()
+		})]
+	}
+
+	function bounceUpAnimation() {
+		game.puppy.tweens = [
+			new Tween({
+				target: game.puppy,
+				durationFrames: 60,
+				delayFrames: 0,
+				startY: SCREEN_H + 2 - 20,
+				endY: SCREEN_H - 40,
+				easing: easeOutElastic,
+			}),
+			new Tween({
+				target: game.puppy.boobs,
+				durationFrames: 70,
+				delayFrames: 2,
+				startY: SCREEN_H + 2 - 20 + 18,
+				endY: SCREEN_H - 40 + 18,
+				easing: easeOutElastic,
+			}),
+			new Tween({
+				target: game.puppy.head,
+				durationFrames: 60,
+				delayFrames: 0,
+				startY: SCREEN_H + 2 - 20 - 39,
+				endY: SCREEN_H - 40 - 39,
+				easing: easeOutElastic,
+				callback: () => {
+					game.puppy.eyeSprite = 192
+					game.puppy.timers.push(new Timer(120, startPuppyBlink))
+					game.hud.disableButtons(false)
+				}
+			})
+		]
+	}
 }
 
 // util
@@ -558,6 +702,10 @@ function easeOutQuad(t) {
 	return 1 - t * t
 }
 
+function easeInQuad(t) {
+	return t * t
+}
+
 function turnsSin(turns) {
 	const rads = turns * (Math.PI * 2)
 	const result = -Math.sin(rads)
@@ -630,8 +778,8 @@ function turnCos(turns) {
 // 072:0000766600076666000766660076666600766666007666660076666600766666
 // 073:6b66666a666666a9666666a9666666a966666a9966666a9966666a9966666a99
 // 074:9999999999999999999999999999999999999999999999969999999999999691
-// 075:9991111199911111999111619991111199116177961111171111111111111111
-// 076:1611199961111999111119991161199977111199711116161111111111111111
+// 075:9991111199911111999111619991111199116111961111111111111111111111
+// 076:1611199961111999111119991161199911111199111116161111111111111111
 // 077:9999999999999999999999999999999999999999999999999699999919999999
 // 078:a66666b69a6666669a6666669a66666699a6666699a6666699a6666699a66666
 // 079:6667000066667000666670006666670066666700666667006666670066666700
@@ -646,8 +794,8 @@ function turnCos(turns) {
 // 088:0076666600766666007666660076666600766666007666660007666600076666
 // 089:66666a99666666a96666670a6666670066667000666670006667000066700000
 // 090:999999919999996199999911aa99991100a99911000aa99100000aaa00000000
-// 091:171111111711111711711171111777111111111111111111aa11111100aa1111
-// 092:111111717111117117111711117771111111111111111111111111aa1111aa00
+// 091:111111111111111111111111111111111111111111111111aa11111100aa1111
+// 092:111111111111111111111111111111111111111111111111111111aa1111aa00
 // 093:699999991199999911999999119999aa11999a00199aa000aaa0000000000000
 // 094:99a666669a666666a07666660076666600076666000766660000766600000766
 // 095:6666670066666700666667006666670066666700666667006666700066667000
@@ -705,10 +853,30 @@ function turnCos(turns) {
 // 193:cccc0000bbbbc000bbbbc000bccbc000ccccc00011ccc00011ccc000ccccc000
 // 194:0000cccc000cbbbb000cbbbb000cbccb000ccccc000ccc11000ccc11000ccccc
 // 195:c0000000bc000000bbc00000bbc00000bbbc00c0cbbc0c00ccbbcc00ccbbccc0
+// 196:0000000000000000000000000000000000000000000000020000002300000232
+// 197:0000000000000000000002220022233302333333233333333333333332333333
+// 198:0000000022222222333333333333333333333333333333333333333333333333
+// 199:0000000000000000222222223333333333333333333333333333333333333333
 // 208:000cbb1c0000cbcc00000ccc0000000000000000000000000000000000000000
 // 209:ccccc000cccc0000ccc000000000000000000000000000000000000000000000
 // 210:000ccccc0000cccc00000ccc0000000000000000000000000000000000000000
 // 211:c1bbc000ccbc0000ccc000000000000000000000000000000000000000000000
+// 212:0000232300023232000232320002232300002323000002230000002200000000
+// 213:2333323333332333333233333323333333233332223333200233320000222000
+// 214:3333333333322333322002332000002300000002000000000000000000000000
+// 215:3333222233220000333200003332000033320000222000000000000000000000
+// 224:0000007700000007000000000000000007000000070000070070007000077700
+// 225:000000770000000700000000070000070077777d000ddddd0000dddd00000ddd
+// 228:0000000000000000000000000000000000000000022222222332233223233223
+// 229:0000000000000000000000000000022200222333223333332333333333333233
+// 230:0000000000000000222222223333333333333333333333333333333333333333
+// 231:0000000000000000000000002222222233333333333333333333333333333333
+// 240:0000007700000007000000000000000000000000000000070000007000000700
+// 241:0000007700000007000000000000000700000070000007000000000000000000
+// 244:0233233300223333023333322333322302332333002223330000233300000222
+// 245:3322233322333333333333333333333233332220322200002000000000000000
+// 246:3333333333333333332223332220023300000023000000020000000000000000
+// 247:3333333333332222332200003332000033320000333200002220000000000000
 // </TILES>
 
 // <WAVES>
@@ -865,6 +1033,6 @@ function turnCos(turns) {
 // </SCREEN>
 
 // <PALETTE>
-// 000:000000f6f4f1413c38a49a8e6f6b62c8f6f1ff9aa7bc505ef9f2dfead1ac705835afc3ff40579a000000000000000000
+// 000:000000f6f4f1413c38a49a8e6f6b62c8f6f1ff9aa7bc505ef9f2dfead1ac705835afc3ff40579a6b2e36000000000000
 // </PALETTE>
 
