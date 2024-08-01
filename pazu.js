@@ -246,7 +246,7 @@ class Button {
 		this.callback = callback
 
 		clip(0, 0, 0, 0)
-		this.w = print(text, 0, 0, 1, false, 1, true)
+		this.w = print(text, 0, 0, 1, false, 1, false)
 		clip()
 	}
 
@@ -288,7 +288,7 @@ class Button {
 			this.w + 4,
 			6,
 			this.mouseDown || this.disabled ? this.mouseDownBgColor : this.bgColor)
-		print(this.text, this.x - this.w / 2, this.y, this.mouseDown ? this.mouseDownTextColor : this.textColor, false, 1, true)
+		print(this.text, this.x - this.w / 2, this.y, this.mouseDown ? this.mouseDownTextColor : this.textColor, false, 1, false)
 		vbank(0)
 	}
 }
@@ -315,22 +315,137 @@ class HeadPat {
 		this.timers = this.timers.filter(t => !t.triggered)
 
 		spr(this.sprite, this.x, this.y, 0, 1, 0, 0, 4, 2)
-		rect(this.x + 32, this.y + 1, 128, 7, 2)
-		rect(this.x + 32, this.y + 2, 128, 5, 3)
-		rect(this.x + 32 + 28, this.y + 2, 128, 5, 4)
-		rect(this.x + 32, this.y + 3, 29, 3, 3)
+		rect(this.x + 32, this.y + 2, 128, 7, 2)
+		rect(this.x + 32, this.y + 3, 128, 5, 3)
+		rect(this.x + 32 + 28, this.y + 3, 128, 5, 4)
+		rect(this.x + 32, this.y + 4, 29, 3, 3)
+	}
+}
+
+// in place at 48, 100
+class Scratch {
+	x = -32
+	y = 100
+	sprite = HEADPAT_HAND_2
+
+	timers = []
+	tweens = []
+
+	TIC() {
+		for (const tween of this.tweens) {
+			tween.TIC()
+		}
+		this.tweens = this.tweens.filter(t => !t.done)
+
+		for (const timer of this.timers) {
+			timer.TIC()
+		}
+		this.timers = this.timers.filter(t => !t.triggered)
+
+		spr(this.sprite, this.x, this.y, 0, 1, 3, 0, 4, 2)
+		rect(0, this.y + 7, this.x, 7, 2)
+		rect(0, this.y + 8, this.x, 5, 3)
+		rect(0 - 28, this.y + 8, this.x, 5, 4)
+		rect(this.x - 29, this.y + 9, 29, 3, 3)
+	}
+}
+
+// left bounds: {x: 32, y: 56} / {x: 48, y: 128}
+// right bounds: {x: 64, y: 56 } / {x: 80, y: 128}
+class Rub {
+	leftHand = { x: -32, y: SCREEN_H, sprite: HEADPAT_HAND_1 }
+	rightHand = { x: 128, y: SCREEN_H, sprite: HEADPAT_HAND_1 }
+
+	timers = [new Timer(0, () => {
+		this.nextTimer()
+	})]
+	tweens = []
+
+	nextTimer() {
+		trace(this.leftHand)
+		this.leftHand.sprite = this.leftHand.sprite === HEADPAT_HAND_1 ? HEADPAT_HAND_2 : HEADPAT_HAND_1
+		this.rightHand.sprite = this.rightHand.sprite === HEADPAT_HAND_1 ? HEADPAT_HAND_2 : HEADPAT_HAND_1
+		this.timers.push(new Timer(10, () => { this.nextTimer() }))
+	}
+
+	TIC() {
+		for (const tween of this.tweens) {
+			tween.TIC()
+		}
+		this.tweens = this.tweens.filter(t => !t.done)
+
+		for (const timer of this.timers) {
+			timer.TIC()
+		}
+		this.timers = this.timers.filter(t => !t.triggered)
+
+		// left hand
+		spr(this.leftHand.sprite, this.leftHand.x, this.leftHand.y, 0, 1, 1, 1, 4, 2)
+		rect(this.leftHand.x + 2, this.leftHand.y + 32, 7, 128, 2)
+		rect(this.leftHand.x + 3, this.leftHand.y + 32, 5, 128, 3)
+		rect(this.leftHand.x + 3, this.leftHand.y + 32 + 16, 5, 128, 4)
+		rect(this.leftHand.x + 4, this.leftHand.y + 32, 3, 17, 3)
+
+		// right hand
+		spr(this.rightHand.sprite, this.rightHand.x, this.rightHand.y, 0, 1, 0, 1, 4, 2)
+		rect(this.rightHand.x + 2 + 5, this.rightHand.y + 32, 7, 128, 2)
+		rect(this.rightHand.x + 3 + 5, this.rightHand.y + 32, 5, 128, 3)
+		rect(this.rightHand.x + 3 + 5, this.rightHand.y + 32 + 16, 5, 128, 4)
+		rect(this.rightHand.x + 4 + 5, this.rightHand.y + 32, 3, 17, 3)
+	}
+}
+
+// meets cheek at 80, 26
+const KISS_SPRITE = 256
+class Kiss {
+	x = 128
+	y = 26
+	sprite = KISS_SPRITE
+
+	timers = []
+	tweens = []
+
+	TIC() {
+		for (const tween of this.tweens) {
+			tween.TIC()
+		}
+		this.tweens = this.tweens.filter(t => !t.done)
+
+		for (const timer of this.timers) {
+			timer.TIC()
+		}
+		this.timers = this.timers.filter(t => !t.triggered)
+
+		spr(this.sprite, this.x, this.y, 0, 1, 0, 0, 8, 10)
 	}
 }
 
 class Hud {
-	headpatButton = new Button("headpat", (SCREEN_W - 128) / 2 / 2, SCREEN_H - 16, () => { this.headPatClick() })
-	kissButton = new Button("kiss", SCREEN_W - (SCREEN_W - 128) / 2 / 2, SCREEN_H - 16, () => { trace("kiss!") })
+	scratchButton = new Button("scratch", (SCREEN_W - 128) / 2 / 2, SCREEN_H - 48, () => { this.scratchClick() })
+	headpatButton = new Button("headpat", (SCREEN_W - 128) / 2 / 2, SCREEN_H - 24, () => { this.headPatClick() })
+	rubButton = new Button("rub", SCREEN_W - (SCREEN_W - 128) / 2 / 2, SCREEN_H - 48, () => { this.rubClick() })
+	kissButton = new Button("kiss", SCREEN_W - (SCREEN_W - 128) / 2 / 2, SCREEN_H - 24, () => { this.kissClick() })
 
-	buttons = [this.headpatButton, this.kissButton]
+	buttons = [this.headpatButton, this.kissButton, this.scratchButton, this.rubButton]
 
 	headPatClick() {
 		this.disableButtons(true)
 		startHeadPat(() => { this.disableButtons(false) })
+	}
+
+	kissClick() {
+		this.disableButtons(true)
+		startKiss(() => { this.disableButtons(false) })
+	}
+
+	scratchClick() {
+		this.disableButtons(true)
+		startScratch(() => { this.disableButtons(false) })
+	}
+
+	rubClick() {
+		this.disableButtons(true)
+		startRub(() => { this.disableButtons(false) })
 	}
 
 	disableButtons(disabled) {
@@ -340,14 +455,18 @@ class Hud {
 	TIC() {
 		this.headpatButton.TIC()
 		this.kissButton.TIC()
+		this.scratchButton.TIC()
+		this.rubButton.TIC()
 	}
 }
 
 class Title {
+	y = 2
+
 	TIC() {
-		printWithBorder("SPOIL THE", 64, 2, TEXT_COLOR, TEXT_BORDER_COLOR, false, 1, false, true)
-		printWithBorder("PUPPY PRINCESS", 64, 10, TEXT_COLOR, TEXT_BORDER_COLOR, false, 2, true, true)
-		printWithBorder("art fight 2024 - by gaffe for pazu", 64, 22, TEXT_BORDER_COLOR, null, false, 1, true, true)
+		printWithBorder("SPOIL THE", 64, this.y, TEXT_COLOR, TEXT_BORDER_COLOR, false, 1, false, true)
+		printWithBorder("PUPPY PRINCESS", 64, this.y + 8, TEXT_COLOR, TEXT_BORDER_COLOR, false, 2, true, true)
+		printWithBorder("art fight 2024 - by gaffe for pazu", 64, this.y + 20, TEXT_BORDER_COLOR, null, false, 1, true, true)
 	}
 }
 
@@ -357,6 +476,9 @@ class Game {
 	hud = new Hud()
 	puppy = new Puppy()
 	headPat = new HeadPat()
+	kiss = new Kiss()
+	scratch = new Scratch()
+	rub = new Rub()
 
 	TIC() {
 		cls(BACKGROUND_COLOR)
@@ -364,8 +486,11 @@ class Game {
 
 		this.puppy.TIC()
 		this.headPat.TIC()
+		this.scratch.TIC()
+		this.rub.TIC()
+		this.kiss.TIC()
 
-		//this.title.TIC()
+		this.title.TIC()
 		this.letterBox.TIC()
 		this.hud.TIC()
 	}
@@ -384,6 +509,324 @@ function TIC() {
 }
 
 // animations
+function startRub(callback) {
+	// left bounds: {x: 32, y: 56} / {x: 48, y: 128}
+	// right bounds: {x: 64, y: 56 } / {x: 80, y: 128}
+
+	game.rub.tweens.push(new Tween({
+		target: game.rub.leftHand,
+		startX: game.rub.leftHand.x,
+		endX: 1,
+		startY: game.rub.leftHand.y,
+		endY: 64,
+		durationFrames: 20,
+		easing: easeOutElastic,
+	}))
+	game.rub.tweens.push(new Tween({
+		target: game.rub.rightHand,
+		startX: game.rub.rightHand.x,
+		endX: 128 - 17,
+		startY: game.rub.rightHand.y,
+		endY: 64,
+		durationFrames: 20,
+		delayFrames: 3,
+		easing: easeOutElastic,
+		callback: rub2
+	}))
+
+	function rub2() {
+		let headStartY = game.puppy.head.y
+		let bodyStartY = game.puppy.y
+		let boobsStartY = game.puppy.boobs.y
+		game.puppy.timers = []
+		game.puppy.tweens = []
+		game.puppy.eyeSprite = PUP_BLINK_HAPPY
+		game.puppy.mouthSprite = PUP_MOUTH_OPEN
+		rubbies(20, rub3)
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.head,
+			startY: headStartY,
+			endY: headStartY - 6,
+			durationFrames: 10,
+			delayFrames: 3,
+			yoyo: true,
+			repeat: 10,
+			easing: easeOutQuad,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy,
+			startY: bodyStartY,
+			endY: bodyStartY - 6,
+			durationFrames: 10,
+			delayFrames: 5,
+			yoyo: true,
+			repeat: 10,
+			easing: easeOutQuad,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.boobs,
+			startY: boobsStartY,
+			endY: boobsStartY - 6,
+			durationFrames: 10,
+			delayFrames: 8,
+			yoyo: true,
+			repeat: 10,
+			easing: easeOutQuad,
+		}))
+	}
+
+	function rub3() {
+		game.rub.tweens.push(new Tween({
+			target: game.rub.leftHand,
+			startX: game.rub.leftHand.x,
+			endX: 1,
+			startY: game.rub.leftHand.y,
+			endY: 64,
+			durationFrames: 30,
+			easing: easeOutElastic,
+		}))
+		game.rub.tweens.push(new Tween({
+			target: game.rub.rightHand,
+			startX: game.rub.rightHand.x,
+			endX: 128 - 17,
+			startY: game.rub.rightHand.y,
+			endY: 64,
+			durationFrames: 30,
+			delayFrames: 8,
+			easing: easeOutElastic,
+			callback: () => {
+				game.puppy.mouthSprite = PUP_MOUTH_HAPPY
+				startPuppyBlink()
+				rub4()
+			}
+		}))
+	}
+
+	function rub4() {
+		game.rub.tweens.push(new Tween({
+			target: game.rub.leftHand,
+			startX: game.rub.leftHand.x,
+			endX: -32,
+			startY: game.rub.leftHand.y,
+			endY: SCREEN_H,
+			durationFrames: 20,
+			easing: easeOutElastic,
+		}))
+		game.rub.tweens.push(new Tween({
+			target: game.rub.rightHand,
+			startX: game.rub.rightHand.x,
+			endX: 128,
+			startY: game.rub.rightHand.y,
+			endY: SCREEN_H,
+			durationFrames: 20,
+			delayFrames: 3,
+			easing: easeOutElastic,
+			callback: () => {
+				callback()
+			}
+		}))
+	}
+
+	function rubbies(times, callback) {
+		let rubs = 0
+
+		nextRub()
+
+		function nextRub() {
+			rubs++
+			if (rubs >= times) {
+				callback()
+			} else {
+				let tweenLeft = new Tween({
+					target: game.rub.leftHand,
+					startX: game.rub.leftHand.x,
+					endX: getRandomArbitrary(32, 48),
+					startY: game.rub.leftHand.y,
+					endY: getRandomArbitrary(56, 128),
+					durationFrames: 10,
+					//easing: easeOutQuad,
+				})
+				let tweenRight = new Tween({
+					target: game.rub.rightHand,
+					startX: game.rub.rightHand.x,
+					endX: getRandomArbitrary(64, 80),
+					startY: game.rub.rightHand.y,
+					endY: getRandomArbitrary(56, 128),
+					durationFrames: 10,
+					//delayFrames: 4,
+					//easing: easeOutQuad,
+					callback: () => { nextRub() }
+				})
+
+				game.rub.tweens = [tweenLeft, tweenRight]
+			}
+		}
+	}
+}
+
+function startScratch(callback) {
+	const headStartX = game.puppy.head.x
+	const scratchStartX = game.scratch.x
+
+	game.puppy.timers = []
+	game.puppy.tweens = []
+	game.puppy.eyeSprite = PUP_EYE_SIDE
+	game.puppy.eyeFlip = true
+
+	game.scratch.tweens.push(new Tween({
+		target: game.scratch,
+		startX: scratchStartX,
+		endX: 48,
+		startY: 118,
+		endY: 100,
+		easing: easeOutElastic,
+		durationFrames: 30,
+		callback: scratch2
+	}))
+
+	function scratch2() {
+		game.puppy.eyeSprite = PUP_BLINK_HAPPY
+		game.puppy.mouthSprite = PUP_MOUTH_OPEN
+
+		function scritchies(times, ms, callback) {
+			let timer = new Timer(ms, callback)
+
+			for (let i = 1; i < times; i++) {
+				let oldTimer = timer
+				timer = new Timer(ms, () => {
+					game.scratch.sprite = game.scratch.sprite === HEADPAT_HAND_1 ? HEADPAT_HAND_2 : HEADPAT_HAND_1
+					game.scratch.timers.push(oldTimer)
+				})
+			}
+
+			return timer
+		}
+
+		game.scratch.timers = [scritchies(9, 10, scratch3)]
+	}
+
+	function scratch3() {
+		game.puppy.mouthSprite = PUP_MOUTH_HAPPY
+		game.puppy.eyeSprite = PUP_EYE_SIDE
+		game.scratch.tweens.push(new Tween({
+			target: game.scratch,
+			startX: game.scratch.x,
+			endX: -32,
+			startY: game.scratch.y,
+			endY: 118,
+			easing: easeInQuad,
+			durationFrames: 15,
+			callback: () => {
+				startPuppyBlink()
+				callback()
+			}
+		}))
+	}
+}
+
+function startKiss(callback) {
+	const headStartX = game.puppy.head.x
+
+	game.puppy.timers = []
+	game.puppy.tweens = []
+	game.puppy.eyeSprite = PUP_EYE_SIDE
+	game.puppy.eyeFlip = false
+
+	game.kiss.tweens.push(new Tween({
+		target: game.kiss,
+		startX: 128,
+		startY: 16,
+		endX: 80,
+		endY: 26,
+		durationFrames: 20,
+		easing: easeOutQuad,
+		callback: kiss2,
+	}))
+
+	function kiss2() {
+		game.puppy.eyeSprite = PUP_BLINK_HAPPY
+		game.puppy.mouthSprite = PUP_MOUTH_OPEN
+		game.kiss.tweens.push(new Tween({
+			target: game.kiss,
+			startX: 80,
+			endX: 64,
+			durationFrames: 10,
+			easing: easeOutQuad,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.head,
+			startX: headStartX,
+			endX: headStartX - 12,
+			durationFrames: 40,
+			delayFrames: 3,
+			easing: easeOutElastic,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy,
+			startX: headStartX,
+			endX: headStartX - 12,
+			durationFrames: 40,
+			delayFrames: 5,
+			easing: easeOutElastic,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.boobs,
+			startX: headStartX,
+			endX: headStartX - 12,
+			durationFrames: 40,
+			delayFrames: 8,
+			easing: easeOutElastic,
+			callback: kiss4
+		}))
+
+		function kiss3() {
+			game.kiss.timers.push(new Timer(1, kiss4))
+		}
+
+		function kiss4() {
+			game.puppy.eyeSprite = PUP_EYE_SIDE
+			game.puppy.mouthSprite = PUP_MOUTH_HAPPY
+			game.kiss.tweens.push(new Tween({
+				target: game.kiss,
+				endX: 128,
+				endY: 16,
+				startX: game.kiss.x,
+				startY: game.kiss.y,
+				durationFrames: 20,
+				easing: easeInQuad,
+			}))
+			game.puppy.tweens.push(new Tween({
+				target: game.puppy.head,
+				startX: game.puppy.head.x,
+				endX: headStartX,
+				durationFrames: 40,
+				delayFrames: 3,
+				easing: easeOutElastic,
+			}))
+			game.puppy.tweens.push(new Tween({
+				target: game.puppy,
+				startX: game.puppy.x,
+				endX: headStartX,
+				durationFrames: 40,
+				delayFrames: 5,
+				easing: easeOutElastic,
+			}))
+			game.puppy.tweens.push(new Tween({
+				target: game.puppy.boobs,
+				startX: game.puppy.boobs.x,
+				endX: headStartX,
+				durationFrames: 40,
+				delayFrames: 8,
+				easing: easeOutElastic,
+				callback: () => {
+					startPuppyBlink()
+					callback()
+				}
+			}))
+		}
+	}
+}
+
 function startHeadPat(callback) {
 	game.puppy.timers = []
 	game.puppy.tweens = []
@@ -417,6 +860,26 @@ function startHeadPat(callback) {
 			endY: game.puppy.head.y + 8,
 			yoyo: true,
 			repeat: 2,
+			durationFrames: 10,
+			easing: easeInQuad,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy,
+			startY: game.puppy.y,
+			endY: game.puppy.y + 6,
+			yoyo: true,
+			repeat: 2,
+			delayFrames: 3,
+			durationFrames: 10,
+			easing: easeInQuad,
+		}))
+		game.puppy.tweens.push(new Tween({
+			target: game.puppy.boobs,
+			startY: game.puppy.boobs.y,
+			endY: game.puppy.boobs.y + 6,
+			yoyo: true,
+			repeat: 2,
+			delayFrames: 5,
 			durationFrames: 10,
 			easing: easeInQuad,
 		}))
@@ -462,7 +925,7 @@ function startPuppyJumpAnimation() {
 	game.puppy.tweens = [
 		new Tween({
 			target: game.puppy,
-			durationFrames: 60,
+			durationFrames: 10,
 			delayFrames: 0,
 			startY: SCREEN_H + 2 - 20,
 			endY: SCREEN_H - 40,
@@ -470,15 +933,15 @@ function startPuppyJumpAnimation() {
 		}),
 		new Tween({
 			target: game.puppy.boobs,
-			durationFrames: 70,
-			delayFrames: 2,
+			durationFrames: 10,
+			delayFrames: 0,
 			startY: SCREEN_H + 2 - 20 + 18,
 			endY: SCREEN_H - 40 + 18,
 			easing: easeOutElastic,
 		}),
 		new Tween({
 			target: game.puppy.head,
-			durationFrames: 60,
+			durationFrames: 10,
 			delayFrames: 0,
 			startY: SCREEN_H + 2 - 20 - 39,
 			endY: SCREEN_H - 40 - 39,
@@ -517,6 +980,13 @@ function startPuppyJumpAnimation() {
 			easing: easeOutQuad,
 			callback: eyeWiggleAnimation
 		}),
+		new Tween({
+			target: game.title,
+			startY: 128,
+			endY: 2,
+			durationFrames: 60,
+			easing: easeOutBounce,
+		})
 	]
 
 	function eyeWiggleAnimation() {
@@ -863,21 +1333,77 @@ function turnCos(turns) {
 // 211:c1bbc000ccbc0000ccc000000000000000000000000000000000000000000000
 // 212:0000232300023232000232320002232300002323000002230000002200000000
 // 213:2333323333332333333233333323333333233332223333200233320000222000
-// 214:3333333333322333322002332000002300000002000000000000000000000000
-// 215:3333222233220000333200003332000033320000222000000000000000000000
+// 214:3333333333322333322002332000023300000233000000220000000000000000
+// 215:3332222233200000332000003320000032000000200000000000000000000000
 // 224:0000007700000007000000000000000007000000070000070070007000077700
-// 225:000000770000000700000000070000070077777d000ddddd0000dddd00000ddd
-// 228:0000000000000000000000000000000000000000022222222332233223233223
-// 229:0000000000000000000000000000022200222333223333332333333333333233
-// 230:0000000000000000222222223333333333333333333333333333333333333333
-// 231:0000000000000000000000002222222233333333333333333333333333333333
+// 225:0000007700000007000000000000000000d0000d000ddddd0000dddd00000ddd
+// 228:0000000000000000000000000000000002222222233223322323322302332333
+// 229:0000000000000000000002220022233322333333233333333333323333222333
+// 230:0000000022222222333333333333333333333333333333333333333333333333
+// 231:0000000000000000222222223333333333333333333333333333333333333333
 // 240:0000007700000007000000000000000000000000000000070000007000000700
 // 241:0000007700000007000000000000000700000070000007000000000000000000
-// 244:0233233300223333023333322333322302332333002223330000233300000222
-// 245:3322233322333333333333333333333233332220322200002000000000000000
-// 246:3333333333333333332223332220023300000023000000020000000000000000
-// 247:3333333333332222332200003332000033320000333200002220000000000000
+// 244:0022333302333332233332230233233300222333000023330000022200000000
+// 245:2233333333333333333333323333222032220000200000000000000000000000
+// 246:3333333333222333222002330000002300000002000000000000000000000000
+// 247:3333222233220000333200003332000033320000222000000000000000000000
 // </TILES>
+
+// <SPRITES>
+// 006:0000000a000000a9000000a9000000a90000000a000000000000000000000000
+// 007:aa00000099a00000999a00009999a0009999a000a9999a00a9999a000a9999a0
+// 021:0000000a000000a9000000a9000000a90000000a000000000000000000000000
+// 022:aaaaa00099999aa09999999a99999999aaa99999000aa99900000a9900000a99
+// 023:0a9999a000a999a000a999a0a0a999a09aa999a09aa999a099a999a0999999a0
+// 038:000000a9000000a9000000a9000000a9000000a9000000a9000000a9000000a9
+// 039:999999a099999a0099999a0099999a009999a0009999a000999a0000999a0000
+// 053:0000000a000000a9000000a9000000a90000000a000000000000000000000000
+// 054:aa000a9999aa0a999999a9999999999999999999aa99999a0a99999a0a9999a0
+// 055:99a0000099a000009a0000009a000000a0000000000000000022000002442000
+// 067:0000000000000000000000000000000000000002000000020000000200000022
+// 068:0002222200233333023332222332222233222233222233332223333223333322
+// 069:22000000332200003333222a333333a9333333a933333a9922222a992222a999
+// 070:a9999a00a9999a029999a0249999a244999a244499a3244499a244449a244444
+// 071:2444420044444200444442004444442044244420423244202332442023324420
+// 082:0000000000000000000000000000000000000000000000000000000000000002
+// 083:0000002200000022000000230000224200224444024444442244422224442222
+// 084:2333322223332223333222332232233344222222444444442444444422444444
+// 085:333a9999333a999933a9999a33a9999a22a999a2444aaa424444442444444244
+// 086:9a244442a2444423244444232444423344442333444423334444233344423333
+// 087:3333244233332442333324423333244233332420333244203324442032444200
+// 096:0000000000000000000000000000000000000000000000000000022200022223
+// 097:0000000000000000000000000000000000000000000222222222222233222222
+// 098:0000000200000022000002220000222222222222222222242222224422222444
+// 099:2442223324422333244433334443333344333322433332334333233343323333
+// 100:2234444433334444333334443333334422333344332233443333334433333344
+// 101:4444424444444444444444444444444444444444444444444444444444444444
+// 102:4442333344442222444444444422222244444444444444444444444444444444
+// 103:2444200044420000442000002200000020000000200000002000000020000000
+// 112:0022222300222223002222230022222300222233002223330022233300222333
+// 113:3332222233332222333333223333333233333333333333333333333333333333
+// 114:2222444422224444222244442222244422222444322224443222224433222244
+// 115:4323333343233333443333334444333344444333444444444444444444444444
+// 116:3333334433333444333344443334444433444444444444444444444444444444
+// 117:4444444444444444444444444444444444444444444444444444444444444444
+// 118:4444444444444444444444444444444244444442444444424444444244444424
+// 119:2000000022000000242222224444444444444444444444444444444444444444
+// 128:0022233300222333023333332333333323333333222333330233333302333333
+// 129:3333333333333333333333333333333233333322333332223333333333333333
+// 130:3222224432222344222233332223333322333333233333333333333333333333
+// 131:4444444444444444333444443333334433333333333333333333333333333333
+// 132:4444444444444444444444444444444434444444333333443333333333333333
+// 133:4444444444444444444444444444444444444444444444443444444433333333
+// 134:4444442444444424444442224444422244442222444423324332333333333333
+// 135:4444444444444444444444442222444422222222222222223332222233333322
+// 144:0022222200000000000000000000000000000000000000000000000000000000
+// 145:2233333300222233000000220000000000000000000000000000000000000000
+// 146:3333333333333333222222220000000000000000000000000000000000000000
+// 147:3333333333333333333333332222222200000000000000000000000000000000
+// 148:3333333333333333333333333333333322222222000000000000000000000000
+// 149:3333333333333333333333333333333333333333222222230000000200000000
+// 150:3333333333333333333333333333333333333333333333332222222200000000
+// 151:3333333333333333333333333333333333333333333333332333333302222222
+// </SPRITES>
 
 // <WAVES>
 // 000:00000000ffffffff00000000ffffffff
