@@ -14,6 +14,8 @@ const BACKGROUND_COLOR = 5
 const TEXT_COLOR = 1
 const TEXT_BORDER_COLOR = 7
 
+const PUPPY_NEEDS = ["rubs", "scratches", "kisses", "headpats"]
+
 let initialized = false
 let game = null
 
@@ -189,7 +191,7 @@ class Puppy {
 	eyeFlip = 0
 	mouthSprite = PUP_MOUTH_HAPPY
 
-	happy = false
+	happy = true
 
 	tweens = []
 	timers = []
@@ -212,6 +214,17 @@ class Puppy {
 		spr(this.mouthSprite, this.head.x + 24, this.head.y + 36, 0, 1)
 		spr(this.mouthSprite, this.head.x + 32, this.head.y + 36, 0, 1, 1)
 		spr(this.eyeSprite, this.head.x + 16, this.head.y + 24, 0, 1, this.eyeFlip, 0, 4, 2)
+
+		if (this.needs) {
+			printWithBorder(`Pashmina needs`, 64, 54 - 10, TEXT_COLOR, TEXT_BORDER_COLOR, false, 1, false, true)
+			printWithBorder(`${this.needs}`, 64, 54 + 7 - 10, TEXT_COLOR, TEXT_BORDER_COLOR, false, 1, false, true)
+		}
+	}
+
+	makeHappy() {
+		this.happy = true
+		this.mouthSprite = PUP_MOUTH_HAPPY
+		this.needs = null
 	}
 }
 
@@ -350,8 +363,6 @@ class Scratch {
 	}
 }
 
-// left bounds: {x: 32, y: 56} / {x: 48, y: 128}
-// right bounds: {x: 64, y: 56 } / {x: 80, y: 128}
 class Rub {
 	leftHand = { x: -32, y: SCREEN_H, sprite: HEADPAT_HAND_1 }
 	rightHand = { x: 128, y: SCREEN_H, sprite: HEADPAT_HAND_1 }
@@ -362,7 +373,6 @@ class Rub {
 	tweens = []
 
 	nextTimer() {
-		trace(this.leftHand)
 		this.leftHand.sprite = this.leftHand.sprite === HEADPAT_HAND_1 ? HEADPAT_HAND_2 : HEADPAT_HAND_1
 		this.rightHand.sprite = this.rightHand.sprite === HEADPAT_HAND_1 ? HEADPAT_HAND_2 : HEADPAT_HAND_1
 		this.timers.push(new Timer(10, () => { this.nextTimer() }))
@@ -510,8 +520,7 @@ function TIC() {
 
 // animations
 function startRub(callback) {
-	// left bounds: {x: 32, y: 56} / {x: 48, y: 128}
-	// right bounds: {x: 64, y: 56 } / {x: 80, y: 128}
+	if (game.puppy.needs === 'rubs') game.puppy.makeHappy()
 
 	game.rub.tweens.push(new Tween({
 		target: game.rub.leftHand,
@@ -546,7 +555,7 @@ function startRub(callback) {
 		game.puppy.tweens.push(new Tween({
 			target: game.puppy.head,
 			startY: headStartY,
-			endY: headStartY - 6,
+			endY: headStartY + 6,
 			durationFrames: 10,
 			delayFrames: 3,
 			yoyo: true,
@@ -556,7 +565,7 @@ function startRub(callback) {
 		game.puppy.tweens.push(new Tween({
 			target: game.puppy,
 			startY: bodyStartY,
-			endY: bodyStartY - 6,
+			endY: bodyStartY + 6,
 			durationFrames: 10,
 			delayFrames: 5,
 			yoyo: true,
@@ -566,7 +575,7 @@ function startRub(callback) {
 		game.puppy.tweens.push(new Tween({
 			target: game.puppy.boobs,
 			startY: boobsStartY,
-			endY: boobsStartY - 6,
+			endY: boobsStartY + 6,
 			durationFrames: 10,
 			delayFrames: 8,
 			yoyo: true,
@@ -665,6 +674,8 @@ function startRub(callback) {
 }
 
 function startScratch(callback) {
+	if (game.puppy.needs === 'scratches') game.puppy.makeHappy()
+
 	const headStartX = game.puppy.head.x
 	const scratchStartX = game.scratch.x
 
@@ -725,6 +736,8 @@ function startScratch(callback) {
 }
 
 function startKiss(callback) {
+	if (game.puppy.needs === 'kisses') game.puppy.makeHappy()
+
 	const headStartX = game.puppy.head.x
 
 	game.puppy.timers = []
@@ -828,6 +841,8 @@ function startKiss(callback) {
 }
 
 function startHeadPat(callback) {
+	if (game.puppy.needs === 'headpats') game.puppy.makeHappy()
+
 	game.puppy.timers = []
 	game.puppy.tweens = []
 	game.puppy.eyeSprite = PUP_EYE_UP
@@ -903,13 +918,35 @@ function startHeadPat(callback) {
 
 function startPuppyBlink() {
 	function puppyOpenEyes() {
-		game.puppy.eyeSprite = game.puppy.happy ? PUP_EYE_UP : PUP_EYE_AHEAD
+		game.puppy.eyeSprite = game.puppy.happy ? PUP_EYE_AHEAD : PUP_EYE_UP
 		game.puppy.timers.push(new Timer(60 * getRandomArbitrary(4, 7), puppyCloseEyes))
 	}
 
 	function puppyCloseEyes() {
 		game.puppy.eyeSprite = game.puppy.happy ? PUP_BLINK_HAPPY : PUP_BLINK_SAD
-		game.puppy.timers.push(new Timer(0.125 * 60, puppyOpenEyes))
+		if (!game.puppy.happy) {
+			game.puppy.mouthSprite = PUP_MOUTH_SAD
+		}
+		game.puppy.timers.push(new Timer(0.2 * 60, puppyOpenEyes))
+	}
+
+	function addSadAnimTimer() {
+		if (game.puppy.happy) return
+		game.puppy.timers.push(new Timer(15, () => {
+			game.puppy.mouthSprite = game.puppy.mouthSprite === PUP_MOUTH_SAD ? PUP_MOUTH_SAD_2 : PUP_MOUTH_SAD
+			addSadAnimTimer()
+		}))
+	}
+
+	if (game.puppy.happy) {
+		game.puppy.timers.push(new Timer(getRandomArbitrary(1 * 60, 10 * 60), () => {
+			game.puppy.happy = false
+			addSadAnimTimer()
+			game.puppy.needs = PUPPY_NEEDS[Math.floor(getRandomArbitrary(0, 4))]
+			trace(game.puppy.needs)
+		}))
+	} else {
+		addSadAnimTimer()
 	}
 
 	puppyCloseEyes()
@@ -921,41 +958,41 @@ function startPuppyJumpAnimation() {
 	game.hud.disableButtons(true)
 	game.puppy.eyeSprite = PUP_EYE_UP
 
-	// DEBUG
-	game.puppy.tweens = [
-		new Tween({
-			target: game.puppy,
-			durationFrames: 10,
-			delayFrames: 0,
-			startY: SCREEN_H + 2 - 20,
-			endY: SCREEN_H - 40,
-			easing: easeOutElastic,
-		}),
-		new Tween({
-			target: game.puppy.boobs,
-			durationFrames: 10,
-			delayFrames: 0,
-			startY: SCREEN_H + 2 - 20 + 18,
-			endY: SCREEN_H - 40 + 18,
-			easing: easeOutElastic,
-		}),
-		new Tween({
-			target: game.puppy.head,
-			durationFrames: 10,
-			delayFrames: 0,
-			startY: SCREEN_H + 2 - 20 - 39,
-			endY: SCREEN_H - 40 - 39,
-			easing: easeOutElastic,
-			callback: () => {
-				game.puppy.eyeSprite = 192
-				game.puppy.timers.push(new Timer(120, startPuppyBlink))
-				game.hud.disableButtons(false)
-			}
-		})
-	]
+	// // DEBUG
+	// game.puppy.tweens = [
+	// 	new Tween({
+	// 		target: game.puppy,
+	// 		durationFrames: 10,
+	// 		delayFrames: 0,
+	// 		startY: SCREEN_H + 2 - 20,
+	// 		endY: SCREEN_H - 40,
+	// 		easing: easeOutElastic,
+	// 	}),
+	// 	new Tween({
+	// 		target: game.puppy.boobs,
+	// 		durationFrames: 10,
+	// 		delayFrames: 0,
+	// 		startY: SCREEN_H + 2 - 20 + 18,
+	// 		endY: SCREEN_H - 40 + 18,
+	// 		easing: easeOutElastic,
+	// 	}),
+	// 	new Tween({
+	// 		target: game.puppy.head,
+	// 		durationFrames: 10,
+	// 		delayFrames: 0,
+	// 		startY: SCREEN_H + 2 - 20 - 39,
+	// 		endY: SCREEN_H - 40 - 39,
+	// 		easing: easeOutElastic,
+	// 		callback: () => {
+	// 			game.puppy.eyeSprite = 192
+	// 			game.puppy.timers.push(new Timer(120, startPuppyBlink))
+	// 			game.hud.disableButtons(false)
+	// 		}
+	// 	})
+	// ]
 
-	return
-	// END DEBUG
+	// return
+	// // END DEBUG
 
 	game.puppy.tweens = [
 		new Tween({
@@ -1342,7 +1379,7 @@ function turnCos(turns) {
 // 230:0000000022222222333333333333333333333333333333333333333333333333
 // 231:0000000000000000222222223333333333333333333333333333333333333333
 // 240:0000007700000007000000000000000000000000000000070000007000000700
-// 241:0000007700000007000000000000000700000070000007000000000000000000
+// 241:0000007700000007000000000000000000000007000000700000070000000000
 // 244:0022333302333332233332230233233300222333000023330000022200000000
 // 245:2233333333333333333333323333222032220000200000000000000000000000
 // 246:3333333333222333222002330000002300000002000000000000000000000000
